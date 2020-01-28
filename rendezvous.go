@@ -38,6 +38,7 @@ func startRendezvousServer(port string) error {
 	if err != nil {
 		return err
 	}
+	log.Println("Listening for peers")
 	listener, err := quic.Listen(conn, GenerateTLSConfig(), &quic.Config{KeepAlive: true})
 	if err != nil {
 		return err
