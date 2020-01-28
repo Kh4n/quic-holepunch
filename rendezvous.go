@@ -64,6 +64,11 @@ func startRendezvousServer(port string) error {
 			if !ok {
 				return
 			}
+			rc := &rendezvousConn{
+				stream:   stream,
+				peerAddr: rAddr,
+			}
+			conns[peerID] = rc
 			for pID, rc := range conns {
 				if pID != peerID {
 					rc.mux.Lock()
@@ -80,11 +85,6 @@ func startRendezvousServer(port string) error {
 					}
 				}
 			}
-			rc := &rendezvousConn{
-				stream:   stream,
-				peerAddr: rAddr,
-			}
-			conns[peerID] = rc
 		}()
 	}
 }
@@ -133,6 +133,7 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 				log.Printf("Error: %s\n", err)
 				return
 			}
+			log.Printf("Recieved peer addr %s\n", addr)
 			peerAddr, err := net.ResolveUDPAddr("udp4", addr)
 			if err != nil {
 				log.Printf("Error: %s\n", err)
@@ -178,10 +179,12 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 				}()
 				var sess quic.Session
 				for i := 0; i < 5; i++ {
+					log.Printf("Attempting to dial %s\n", peerConn.String())
 					sess, err = quic.Dial(conn, peerConn, peerConn.String(), tlsConf, nil)
 					if err == nil {
 						break
 					}
+					peerConn.Port++
 					log.Println("Dial failed, reattempting")
 				}
 				if sess == nil {
