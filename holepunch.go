@@ -30,13 +30,6 @@ func holepunch(port, remoteAddr string) error {
 	}
 
 	connects := make(chan *net.UDPAddr)
-	if remoteAddr != "" {
-		rAddr, err := net.ResolveUDPAddr("udp4", remoteAddr)
-		if err != nil {
-			return err
-		}
-		connects <- rAddr
-	}
 	go func() {
 		for {
 			log.Println("Listening for connections")
@@ -69,6 +62,13 @@ func holepunch(port, remoteAddr string) error {
 			}
 		}
 	}()
+	if remoteAddr != "" {
+		rAddr, err := net.ResolveUDPAddr("udp4", remoteAddr)
+		if err != nil {
+			return err
+		}
+		connects <- rAddr
+	}
 
 	rAddr := <-connects
 	tlsConf := &tls.Config{
