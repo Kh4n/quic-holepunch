@@ -180,12 +180,14 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 				var sess quic.Session
 				for i := 0; i < 5; i++ {
 					log.Printf("Attempting to dial %s\n", peerConn.String())
-					sess, err = quic.Dial(conn, peerConn, peerConn.String(), tlsConf, nil)
-					if err == nil {
-						break
+					for j := 0; j < 2; j++ {
+						sess, err = quic.Dial(conn, peerConn, peerConn.String(), tlsConf, nil)
+						if err == nil {
+							break
+						}
+						log.Println("Dial failed, reattempting")
 					}
 					peerConn.Port++
-					log.Println("Dial failed, reattempting")
 				}
 				if sess == nil {
 					log.Println("Unable to establish connection")

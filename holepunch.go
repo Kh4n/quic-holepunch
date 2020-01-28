@@ -104,10 +104,20 @@ func main() {
 	peerID := flag.String("peerID", "", "the unique peerID to use")
 	port := flag.String("port", ":10200", "the port to listen on")
 	rendezvousAddr := flag.String("rendezvousAddr", "", "address of rendezvous server")
+
+	remoteAddr := flag.String("remoteAddr", "", "remote address to dial, if doing simple holepunch. use none to listen")
 	flag.Parse()
 
 	if *port != "" && *rendezvousAddr != "" && *peerID != "" {
 		err := holepunchRendezvous(*peerID, *port, *rendezvousAddr)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if *port != "" && *remoteAddr != "" {
+		if *remoteAddr == "none" {
+			*remoteAddr = ""
+		}
+		err := holepunch(*port, *remoteAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -117,6 +127,6 @@ func main() {
 			log.Fatal(err)
 		}
 	} else {
-		log.Fatal("Please provide port")
+		log.Fatal(flag.ErrHelp)
 	}
 }
