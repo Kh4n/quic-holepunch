@@ -39,7 +39,7 @@ func holepunch(port, remoteAddr string) error {
 	}
 	go func() {
 		for {
-			log.Panicln("Listening for connections")
+			log.Println("Listening for connections")
 			sess, err := listener.Accept(context.Background())
 			if err != nil {
 				return
