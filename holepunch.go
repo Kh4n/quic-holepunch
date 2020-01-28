@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"time"
 
 	quic "github.com/lucas-clemente/quic-go"
 )
@@ -29,7 +30,14 @@ func holepunch(port, remoteAddr string) error {
 		return err
 	}
 
-	connects := make(chan *net.UDPAddr)
+	connects := make(chan *net.UDPAddr, 1)
+	if remoteAddr != "" {
+		rAddr, err := net.ResolveUDPAddr("udp4", remoteAddr)
+		if err != nil {
+			return err
+		}
+		connects <- rAddr
+	}
 	go func() {
 		for {
 			log.Println("Listening for connections")
@@ -62,13 +70,6 @@ func holepunch(port, remoteAddr string) error {
 			}
 		}
 	}()
-	if remoteAddr != "" {
-		rAddr, err := net.ResolveUDPAddr("udp4", remoteAddr)
-		if err != nil {
-			return err
-		}
-		connects <- rAddr
-	}
 
 	rAddr := <-connects
 	tlsConf := &tls.Config{
@@ -95,6 +96,7 @@ func holepunch(port, remoteAddr string) error {
 		return err
 	}
 
+	time.Sleep(10 * time.Second)
 	return nil
 }
 
