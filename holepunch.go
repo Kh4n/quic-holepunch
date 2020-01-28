@@ -39,6 +39,7 @@ func holepunch(port, remoteAddr string) error {
 	}
 	go func() {
 		for {
+			log.Panicln("Listening for connections")
 			sess, err := listener.Accept(context.Background())
 			if err != nil {
 				return
@@ -74,6 +75,7 @@ func holepunch(port, remoteAddr string) error {
 		InsecureSkipVerify: true,
 		NextProtos:         []string{"quic-echo-example"},
 	}
+	log.Printf("Attempting to dial %+v\n", rAddr)
 	var sess quic.Session
 	for {
 		sess, err = quic.Dial(conn, rAddr, rAddr.String(), tlsConf, nil)
