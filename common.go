@@ -41,7 +41,7 @@ func DefaultConnectInfo(port, remoteAddr string) (*connectInfo, error) {
 	tlsConfListen := GenerateTLSConfig()
 	tlsConfDial := &tls.Config{
 		InsecureSkipVerify: true,
-		NextProtos:         []string{"quic-echo-example"},
+		NextProtos:         []string{"quic-holepunch"},
 	}
 	c.tlsConfListen = tlsConfListen
 	c.tlsConfDial = tlsConfDial
@@ -87,7 +87,7 @@ func GenerateTLSConfig() *tls.Config {
 	}
 	return &tls.Config{
 		Certificates: []tls.Certificate{tlsCert},
-		NextProtos:   []string{"quic-echo-example"},
+		NextProtos:   []string{"quic-holepunch"},
 	}
 }
 

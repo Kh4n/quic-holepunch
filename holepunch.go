@@ -74,7 +74,7 @@ func holepunch(port, remoteAddr string) error {
 	rAddr := <-connects
 	tlsConf := &tls.Config{
 		InsecureSkipVerify: true,
-		NextProtos:         []string{"quic-echo-example"},
+		NextProtos:         []string{"quic-holepunch"},
 	}
 	log.Printf("Attempting to dial %+v\n", rAddr)
 	var sess quic.Session
@@ -101,11 +101,22 @@ func holepunch(port, remoteAddr string) error {
 }
 
 func main() {
+	peerID := flag.String("peerID", "", "the unique peerID to use")
 	port := flag.String("port", ":10200", "the port to listen on")
-	remoteAddr := flag.String("remoteAddr", "", "the address to dial")
+	rendezvousAddr := flag.String("rendezvousAddr", "", "address of rendezvous server")
 	flag.Parse()
-	err := holepunch(*port, *remoteAddr)
-	if err != nil {
-		log.Fatal(err)
+
+	if *port != "" && *rendezvousAddr != "" && *peerID != "" {
+		err := holepunchRendezvous(*peerID, *port, *rendezvousAddr)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if *port != "" {
+		err := startRendezvousServer(*port)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		log.Fatal("Please provide port")
 	}
 }
