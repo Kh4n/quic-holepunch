@@ -104,5 +104,8 @@ func main() {
 	port := flag.String("port", ":10200", "the port to listen on")
 	remoteAddr := flag.String("remoteAddr", "", "the address to dial")
 	flag.Parse()
-	log.Fatal(holepunch(*port, *remoteAddr))
+	err := holepunch(*port, *remoteAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
