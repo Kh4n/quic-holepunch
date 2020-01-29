@@ -146,7 +146,7 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 	streams := peerStreams{
 		streams: make([]quic.SendStream, 0),
 	}
-	listener, err := quic.Listen(conn, GenerateTLSConfig(), nil)
+	listener, err := quic.Listen(conn, GenerateTLSConfig(), &quic.Config{KeepAlive: true})
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 				var sess quic.Session
 				log.Printf("Attempting to dial %s\n", peerAddr.String())
 				for i := 0; i < 5; i++ {
-					sess, err = quic.Dial(conn, peerAddr, peerAddr.String(), tlsConf, nil)
+					sess, err = quic.Dial(conn, peerAddr, peerAddr.String(), tlsConf, &quic.Config{KeepAlive: true})
 					if err == nil {
 						break
 					}
