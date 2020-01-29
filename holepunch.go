@@ -12,6 +12,87 @@ import (
 	quic "github.com/lucas-clemente/quic-go"
 )
 
+func multiConnTest(port, remoteAddr1, remoteAddr2 string) error {
+	_, port, err := net.SplitHostPort(port)
+	if err != nil {
+		return err
+	}
+	listenAddr, err := net.ResolveUDPAddr("udp4", ":"+port)
+	if err != nil {
+		return err
+	}
+	conn, err := net.ListenUDP("udp", listenAddr)
+	if err != nil {
+		return err
+	}
+	listener, err := quic.Listen(conn, GenerateTLSConfig(), nil)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			sess, err := listener.Accept(context.Background())
+			if err != nil {
+				return
+			}
+			go func() {
+				stream, err := sess.AcceptUniStream(context.Background())
+				if err != nil {
+					return
+				}
+				for {
+					msg, err := ReadLenPrefixedString(stream)
+					if err != nil {
+						return
+					}
+					fmt.Printf("Message recieved: %s\n", msg)
+				}
+			}()
+		}
+	}()
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: true,
+		NextProtos:         []string{"quic-holepunch"},
+	}
+	rAddr1, err := net.ResolveUDPAddr("udp4", remoteAddr1)
+	if err != nil {
+		return err
+	}
+	rAddr2, err := net.ResolveUDPAddr("udp4", remoteAddr2)
+	if err != nil {
+		return err
+	}
+	go func() {
+		sess, err := quic.Dial(conn, rAddr1, remoteAddr1, tlsConf, nil)
+		if err != nil {
+			return
+		}
+		stream, err := sess.OpenUniStreamSync(context.Background())
+		if err != nil {
+			return
+		}
+		_, err = stream.Write(PrefixStringWithLen("helloworld"))
+		if err != nil {
+			return
+		}
+		time.Sleep(1 * time.Second)
+	}()
+	sess, err := quic.Dial(conn, rAddr2, remoteAddr2, tlsConf, nil)
+	if err != nil {
+		return err
+	}
+	stream, err := sess.OpenUniStreamSync(context.Background())
+	if err != nil {
+		return err
+	}
+	_, err = stream.Write(PrefixStringWithLen("helloworld"))
+	if err != nil {
+		return err
+	}
+	select {}
+}
+
 func holepunch(port, remoteAddr string) error {
 	_, port, err := net.SplitHostPort(port)
 	if err != nil {
@@ -101,8 +182,8 @@ func holepunch(port, remoteAddr string) error {
 }
 
 func main() {
-	peerID := flag.String("peerID", "", "the unique peerID to use")
 	port := flag.String("port", ":10200", "the port to listen on")
+	peerID := flag.String("peerID", "", "the unique peerID to use")
 	rendezvousAddr := flag.String("rendezvousAddr", "", "address of rendezvous server")
 
 	remoteAddr := flag.String("remoteAddr", "", "remote address to dial, if doing simple holepunch. use none to listen")

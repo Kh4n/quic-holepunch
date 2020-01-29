@@ -124,7 +124,7 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 	if err != nil {
 		return err
 	}
-	peerConns := make(chan *net.UDPAddr)
+	peerAddrs := make(chan *net.UDPAddr)
 
 	go func() {
 		for {
@@ -139,7 +139,7 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 				log.Printf("Error: %s\n", err)
 				return
 			}
-			peerConns <- peerAddr
+			peerAddrs <- peerAddr
 		}
 	}()
 
@@ -152,12 +152,12 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 	}
 	go func() {
 		for {
-			peerConn := <-peerConns
+			peerAddr := <-peerAddrs
 			go func() {
 				listenerCtx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 				go func() {
-					log.Printf("Trying to listen for connection from %s\n", peerConn.String())
+					log.Printf("Trying to listen for connection from %s\n", peerAddr.String())
 					sess, err := listener.Accept(listenerCtx)
 					if err != nil {
 						log.Printf("Error: %s\n", err)
@@ -178,16 +178,13 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 					}
 				}()
 				var sess quic.Session
+				log.Printf("Attempting to dial %s\n", peerAddr.String())
 				for i := 0; i < 5; i++ {
-					log.Printf("Attempting to dial %s\n", peerConn.String())
-					for j := 0; j < 2; j++ {
-						sess, err = quic.Dial(conn, peerConn, peerConn.String(), tlsConf, nil)
-						if err == nil {
-							break
-						}
-						log.Println("Dial failed, reattempting")
+					sess, err = quic.Dial(conn, peerAddr, peerAddr.String(), tlsConf, nil)
+					if err == nil {
+						break
 					}
-					peerConn.Port++
+					log.Println("Dial failed, reattempting")
 				}
 				if sess == nil {
 					log.Println("Unable to establish connection")
@@ -220,12 +217,15 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 			return err
 		}
 		msg := fmt.Sprintf("%s: %s", peerID, text)
+		streams.mux.Lock()
 		for _, stream := range streams.streams {
 			_, err = stream.Write(PrefixStringWithLen(msg))
 			if err != nil {
+				streams.mux.Unlock()
 				return err
 			}
 			fmt.Println()
 		}
+		streams.mux.Unlock()
 	}
 }
