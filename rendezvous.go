@@ -73,18 +73,22 @@ func startRendezvousServer(port string) error {
 			for pID, rc := range conns {
 				if pID != peerID {
 					rc.mux.Lock()
+					var rAddrStr, rcAddrStr string
 					if rc.peerAddr.IP.String() == rAddr.IP.String() {
-						_, err = rc.stream.Write(PrefixStringWithLen(":" + strconv.Itoa(rAddr.Port)))
+						rAddrStr = ":" + strconv.Itoa(rAddr.Port)
+						rcAddrStr = ":" + strconv.Itoa(rc.peerAddr.Port)
 					} else {
-						_, err = rc.stream.Write(PrefixStringWithLen(rAddr.String()))
+						rAddrStr = rAddr.String()
+						rcAddrStr = rc.peerAddr.String()
 					}
+					_, err = rc.stream.Write(PrefixStringWithLen(rAddrStr))
 					if err != nil {
 						log.Printf("Error: %s\n", err)
 						rc.mux.Unlock()
 						return
 					}
 					rc.mux.Unlock()
-					_, err := stream.Write(PrefixStringWithLen(rc.peerAddr.String()))
+					_, err := stream.Write(PrefixStringWithLen(rcAddrStr))
 					if err != nil {
 						return
 					}
