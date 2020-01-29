@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -72,7 +73,11 @@ func startRendezvousServer(port string) error {
 			for pID, rc := range conns {
 				if pID != peerID {
 					rc.mux.Lock()
-					_, err = rc.stream.Write(PrefixStringWithLen(rAddr.String()))
+					if rc.peerAddr.IP.String() == rAddr.IP.String() {
+						_, err = rc.stream.Write(PrefixStringWithLen(":" + strconv.Itoa(rAddr.Port)))
+					} else {
+						_, err = rc.stream.Write(PrefixStringWithLen(rAddr.String()))
+					}
 					if err != nil {
 						log.Printf("Error: %s\n", err)
 						rc.mux.Unlock()
