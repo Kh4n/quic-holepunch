@@ -154,16 +154,14 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 		for {
 			peerAddr := <-peerAddrs
 			go func() {
-				listenerCtx, cancel := context.WithCancel(context.Background())
-				defer cancel()
 				go func() {
 					log.Printf("Trying to listen for connection from %s\n", peerAddr.String())
-					sess, err := listener.Accept(listenerCtx)
+					sess, err := listener.Accept(context.Background())
 					if err != nil {
 						log.Printf("Error: %s\n", err)
 						return
 					}
-					stream, err := sess.AcceptUniStream(listenerCtx)
+					stream, err := sess.AcceptUniStream(context.Background())
 					if err != nil {
 						log.Printf("Error: %s\n", err)
 						return
