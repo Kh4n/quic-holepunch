@@ -45,7 +45,7 @@ func startRendezvousServer(port string) error {
 		return err
 	}
 
-	conns := make(map[string]*rendezvousConn, 0)
+	conns := make(map[string]*rendezvousConn)
 	for {
 		sess, err := listener.Accept(context.Background())
 		if err != nil {
@@ -142,7 +142,7 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 				log.Printf("Error: %s\n", err)
 				return
 			}
-			log.Printf("Recieved peer addr %s\n", addr)
+			log.Printf("Received peer addr %s\n", addr)
 			peerAddr, err := net.ResolveUDPAddr("udp4", addr)
 			if err != nil {
 				log.Printf("Error: %s\n", err)
@@ -181,7 +181,7 @@ func holepunchRendezvous(peerID, port, rendezvousAddr string) error {
 							log.Printf("Error: %s\n", err)
 							return
 						}
-						fmt.Printf("Message recieved: %s\n", msg)
+						fmt.Printf("Message received: %s\n", msg)
 					}
 				}()
 				var sess quic.Session
